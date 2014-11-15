@@ -8,7 +8,7 @@ import re
 
 import vinaigrette
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.core.management.commands import makemessages as django_makemessages
 from django.utils.translation import ugettext
 
