@@ -12,6 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.management.commands import makemessages as django_makemessages
 from django.utils.translation import ugettext
 
+
 def _get_po_paths(locales=[]):
     """Returns paths to all relevant po files in the current project."""
     basedirs = [os.path.join('conf', 'locale'), 'locale']
@@ -35,26 +36,27 @@ def _get_po_paths(locales=[]):
                         po_paths.append(os.path.join(dirpath, f))
     return po_paths
 
+
 class Command(django_makemessages.Command):
-    
+
     option_list = django_makemessages.Command.option_list + (
         make_option('--no-vinaigrette', default=True, action='store_false', dest='avec-vinaigrette',
             help="Don't include strings from database fields handled by vinaigrette."),
         make_option('--keep-obsolete', default=False, action='store_true', dest='keep-obsolete',
             help="Don't obsolete strings no longer referenced in code or Viniagrette's fields.")
     )
-    
+
     help = "Runs over the entire source tree of the current directory and pulls out all strings marked for translation. It creates (or updates) a message file in the conf/locale (in the django tree) or locale (for project and application) directory. Also includes strings from database fields handled by vinaigrette."
     requires_model_validation = True
-    
+
     def handle(self, *args, **options):
         if not options.get('avec-vinaigrette'):
             return super(Command, self).handle(*args, **options)
-        
+
         verbosity = int(options.get('verbosity'))
         vinfilepath = 'vinaigrette-deleteme.py'
         sources = ['', '']
-        
+
         # Because Django makemessages isn't very extensible, we're writing a
         # fake Python file, calling makemessages, then deleting it after.
         vinfile = codecs.open(vinfilepath, 'w', encoding='utf8')
@@ -62,7 +64,7 @@ class Command(django_makemessages.Command):
             vinfile.write('#coding:utf-8\n')
             if verbosity > 0:
                 print('Vinaigrette is processing database values...')
-            
+
             for model in sorted(vinaigrette._registry.keys(),
               key=lambda m: m._meta.object_name):
                 strings_seen = set()
@@ -72,7 +74,7 @@ class Command(django_makemessages.Command):
                 manager = reg['manager'] if reg['manager'] else model._default_manager
                 qs = manager.filter(reg['restrict_to']) if reg['restrict_to'] \
                     else manager.all()
-            
+
                 for instance in qs.order_by('pk').values('pk', *fields):
                     # In the reference comment in the po file, use the object's primary
                     # key as the line number, but only if it's an integer primary key
@@ -86,24 +88,25 @@ class Command(django_makemessages.Command):
                             strings_seen.add(val)
                             sources.append('%s/%s:%s' % (modelname, fieldname, idnum))
                             vinfile.write(
-                                'gettext(%r)\n' 
+                                'gettext(%r)\n'
                                 % val.replace('\r', '').replace('%', '%%')
                             )
         finally:
             vinfile.close()
-        
+
         try:
             super(Command, self).handle(*args, **options)
         finally:
             os.unlink(vinfilepath)
-        
+
         r_lineref = re.compile(r'%s:(\d+)' % re.escape(vinfilepath))
+
         def lineref_replace(match):
             try:
                 return sources[int(match.group(1))]
             except (IndexError, ValueError):
                 return match.group(0)
-        
+
         # The PO file has been generated. Now, swap out the line-number
         # references to our fake python file for more descriptive
         # references.
@@ -122,12 +125,12 @@ class Command(django_makemessages.Command):
                 locales = [locales]
 
             po_paths = _get_po_paths(locales)
-            
+
         if options.get('keep-obsolete'):
-            obsolete_warning = ['#. %s\n' % 
+            obsolete_warning = ['#. %s\n' %
                 ugettext('Obsolete translation kept alive with Viniagrette').encode('utf8'),
                 '#: obsolete:0\n']
-        
+
         for po_path in po_paths:
             po_file = open(po_path)
             new_contents = []
@@ -150,11 +153,11 @@ class Command(django_makemessages.Command):
                             new_contents.extend(obsolete_warning)
                         if line.startswith('#~ '):
                             line = re.sub(r'^#~ ', '', line)
-                    
+
                     new_contents.append(line)
                 lastline = line
             po_file.close()
-            
+
             # Perhaps this should be done a little more atomically w/ renames?
             po_file = open(po_path, 'w')
             for line in new_contents:
