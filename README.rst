@@ -70,22 +70,9 @@ Use `vinaigrette.VinaigrettteAdminLanguageMiddleware` to force the admin to
 always use the main language, and not have vinaigrette mess with your
 change views.
 
-=============
-Release Notes
-=============
+=======
+WARNING
+=======
 
-0.1.3
------
-
-* Support for Django 1.6.
-
-0.2.0
------
-
-* New VinaigrettteAdminLanguageMiddleware middleware.
-* Bug fix for the --all option, it now works again.
-
-0.3.0
------
-
-* Support for python 3.3.
+This fork support only django 1.7.*. For more information take a look at
+origin repo.
